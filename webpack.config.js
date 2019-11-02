@@ -1,13 +1,20 @@
+const PORT = require('./src/server/server');
+
 module.exports = {
   mode: 'development',
   entry: './src/client/index.jsx',
   output: {
     path: `${__dirname}/dist`,
-    filename: '[name].[chunkhash:8].js',
+    filename: 'bundle.js',
   },
   devServer: {
     publicPath: '/dist/',
     contentBase: './src/client/views',
+    port: 8080,
+    proxy: {
+      context: () => true,
+      target: `http://localhost:${PORT}`,
+    },
   },
   module: {
     rules: [
