@@ -9,8 +9,8 @@ router.get('/id/:id', pokemonController.getPokemon, (req, res, next) => {
   next();
 });
 
-router.post('/id/:id', (req, res, next) => {
-  pokemonController.postPokemon(req, res, next);
+router.post('/id/:id', pokemonController.postPokemon, (req, res, next) => {
+  res.status(200).json(res.locals.pokemon);
   next();
 });
 

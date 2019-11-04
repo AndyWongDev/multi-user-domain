@@ -2,49 +2,61 @@
 const fetch = require('node-fetch');
 const Pokemon = require('../models/pokemon.model');
 
-const apiQuery = 'pokeapi.co/api/v2/';
+const apiQuery = 'https://pokeapi.co/api/v2';
 
 const pokemonController = {};
 
 pokemonController.getPokemon = (req, res, next) => {
+  console.log('inside getPokemon', req.params);
   Pokemon.findOne({ id: req.params.id }, (err, data) => {
+    console.log('data', data);
     if (err) res.send(err);
     if (data) {
       res.locals.pokemon = data;
-      console.log('Found Pokemon: ', data.name);
+      console.log('Found Pokemon: ', data);
     } else {
       console.log('New Pokemon Discovered!');
-      fetch(`/pokemon/${req.params.id}`, { method: 'POST' });
+      this.pokemonController.postPokemon(req, res, next);
     }
     next();
   });
 };
 
 pokemonController.postPokemon = async (req, res, next) => {
-  const data = await fetch(`${apiQuery}/pokemon/${req.params.id}`).json();
-  const {
-    id, name, height, weight,
-  } = data;
+  console.log('inside postPokemon', req.params);
+  const queryUrl = `${apiQuery}/pokemon/${req.params.id}`;
+  const getData = async (url) => {
+    try {
+      const response = await fetch(url);
+      const json = await response.json();
 
-  const pokemon = new Pokemon({
-    id,
-    name,
-    height,
-    weight,
-  });
+      res.locals.pokemon = json.name;
 
-  const filter = { id, name };
-  const update = {
-    id, name, height, weight,
+      const {
+        id, name, height, weight,
+      } = json;
+
+      const pokemon = new Pokemon({
+        id,
+        name,
+        height,
+        weight,
+      });
+
+      const filter = { id, name };
+
+      Pokemon.findOneAndUpdate(
+        filter, pokemon, {
+          upsert: true,
+        },
+      );
+
+      next();
+    } catch (err) {
+      console.error(err);
+    }
   };
-
-  pokemon.findOneAndUpdate(
-    filter, update, {
-      upsert: true,
-    },
-  );
-  res.locals.pokemon = data;
-  next();
+  getData(queryUrl);
 };
 
 module.exports = pokemonController;
