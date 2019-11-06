@@ -6,19 +6,24 @@ const apiQuery = 'https://pokeapi.co/api/v2';
 
 const pokemonController = {};
 
-pokemonController.getPokemon = (req, res, next) => {
+pokemonController.getPokemon = async (req, res, next) => {
   console.log('inside getPokemon', req.params);
-  Pokemon.findOne({ id: req.params.id }, (err, data) => {
-    if (err) res.send(err);
-    if (data) {
-      console.log('Located Pokemon:', data.name);
-      res.locals.pokemon = data;
-    } else {
-      console.log('New Pokemon Discovered!');
-      this.pokemonController.postPokemon(req, res, next);
-    }
-    next();
-  });
+  try {
+    await Pokemon.findOne({ id: req.params.id }, (err, data) => {
+      if (err) res.send(err);
+      if (data) {
+        console.log('Located Pokemon:', data.name);
+        res.locals.pokemon = data;
+      } else {
+        console.log('New Pokemon Discovered!');
+        pokemonController.postPokemon(req, res, next);
+        res.locals.pokemon = 'Something';
+      }
+    });
+  } catch (err) {
+    return res.status(500).send(err);
+  }
+  return next();
 };
 
 pokemonController.postPokemon = async (req, res, next) => {
@@ -46,16 +51,17 @@ pokemonController.postPokemon = async (req, res, next) => {
           upsert: true,
         }, (err) => {
           if (err) throw err;
-          console.log('Added Pokemon to DB', data.name);
+          console.log('Added Pokemon to DB', pokemon.name);
         },
       );
-      res.locals.pokemon = data;
+      res.locals.pokemon = pokemon;
+      console.log('postPokemon res.locals', pokemon);
       return next();
     } catch (err) {
       return res.status(500).send(err);
     }
   };
-  getData(req.params.id);
+  return getData(req.params.id);
 };
 
 module.exports = pokemonController;
