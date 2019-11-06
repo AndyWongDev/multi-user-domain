@@ -1,7 +1,7 @@
 const PORT = require('./src/server/server');
 
 module.exports = {
-  mode: 'development',
+  mode: process.env.NODE_ENV,
   entry: './src/client/index.jsx',
   output: {
     path: `${__dirname}/dist`,
@@ -9,7 +9,7 @@ module.exports = {
   },
   devServer: {
     publicPath: '/dist/',
-    contentBase: './src/client/views',
+    contentBase: '/src/client/views',
     port: 8080,
     proxy: {
       context: () => true,
