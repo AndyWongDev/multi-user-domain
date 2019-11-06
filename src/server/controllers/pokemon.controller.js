@@ -9,11 +9,10 @@ const pokemonController = {};
 pokemonController.getPokemon = (req, res, next) => {
   console.log('inside getPokemon', req.params);
   Pokemon.findOne({ id: req.params.id }, (err, data) => {
-    console.log('data', data);
     if (err) res.send(err);
     if (data) {
+      console.log('Located Pokemon:', data.name);
       res.locals.pokemon = data;
-      console.log('Found Pokemon: ', data);
     } else {
       console.log('New Pokemon Discovered!');
       this.pokemonController.postPokemon(req, res, next);
@@ -24,39 +23,39 @@ pokemonController.getPokemon = (req, res, next) => {
 
 pokemonController.postPokemon = async (req, res, next) => {
   console.log('inside postPokemon', req.params);
-  const queryUrl = `${apiQuery}/pokemon/${req.params.id}`;
-  const getData = async (url) => {
+  const getData = async (pokeID) => {
+    const queryUrl = `${apiQuery}/pokemon/${pokeID}`;
     try {
-      const response = await fetch(url);
-      const json = await response.json();
-
-      res.locals.pokemon = json.name;
+      const data = await fetch(queryUrl).then((rawData) => rawData.json());
 
       const {
         id, name, height, weight,
-      } = json;
+      } = data;
 
-      const pokemon = new Pokemon({
+      const pokemon = {
         id,
         name,
         height,
         weight,
-      });
+      };
 
-      const filter = { id, name };
+      const query = { id };
 
       Pokemon.findOneAndUpdate(
-        filter, pokemon, {
+        query, pokemon, {
           upsert: true,
+        }, (err) => {
+          if (err) throw err;
+          console.log('Added Pokemon to DB', data.name);
         },
       );
-
-      next();
+      res.locals.pokemon = data;
+      return next();
     } catch (err) {
-      console.error(err);
+      return res.status(500).send(err);
     }
   };
-  getData(queryUrl);
+  getData(req.params.id);
 };
 
 module.exports = pokemonController;
